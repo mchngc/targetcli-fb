@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+  <main class ="container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+      <h1>iSCSI</h1>
+
+      <h2>Overview</h2>
+      <p>iSCSI (Internet Small Computer System Interface) provides SCSI access over IP networks</p>
+      <p>iSCSI is an Internet Protocol (IP)-based storage networking standard for linking data storage facilities. By carrying SCSI commands over IP networks, iSCSI is used to facilitate data transfers over intranets and to manage storage over long distances. iSCSI can be used to transmit data over local area networks (LANs), wide area networks (WANs), or the Internet, and can enable location-independent data storage and retrieval.</p>
+      <p>iSCSI allows clients (called Initiators) to send SCSI commands (CDBs) to SCSI storage devices (LinuxIOs) on remote servers. It is a popular SAN protocol, allowing organizations to consolidate storage into data center storage arrays while providing hosts (such as database and web servers) with the illusion of locally-attached disks. Unlike traditional Fibre Channel, which requires special-purpose cabling, iSCSI can be run over long distances using existing network infrastructure.</p>
+      
+      
+
+<h2>targetcli</h2>
+<p>targetcli is used to configure LIO. targetcli aggregates LIO service modules via a core library, and exports them through an API, to provide a unified single-node LIO SAN configuration shell, independently of the underlying fabric(s).
+
+</p>
+<h3>Cheat Sheet</h3>
+<table>
+  <tr>
+    <th>Command</th>
+    <th>Commemnt</th>
+  </tr>
+  <tr>
+    <td>/backstores/iblock create my_disk /dev/sdb	</td>
+    <td>Create the LUN my_disk on the device /dev/sdb</td>
+  </tr>
+  <tr>
+    <td>/iscsi create</td>
+    <td>Create an iSCSI target</td>
+  </tr>
+  <tr>
+    <td>In /iscsi/<IQN>/tpgt1:
+portals/ create <IP_address></td>
+    <td>Associate an &lt;IP_address&gt;
+</td>
+  </tr>
+  <tr>
+    <td>In /iscsi/<IQN>/tpgt1:
+luns/ create /backstores/iblock/my_disk	</td>
+<td>Export the LUN my_disk</td>
+  </tr>
+  <tr>
+    <td>In /iscsi/<IQN>/tpgt1:
+set attribute authentication=0
+demo_mode_write_protect=0
+generate_node_acls=1
+cache_dynamic_acls=1</td>
+<td>Enable Demo Mode.
+Beware!</td>
+
+
+  </tr>
+  <td>/saveconfig	</td>
+  <td>Commit the configuration
+</td>
+
+
+</table>
+<h2>Startup</h2>
+<pre><code># targetcli
+Welcome to targetcli:
+
+ Copyright (c) 2014 by Datera, Inc.
+ All rights reserved.
+
+Visit us at http://www.datera.io.
+
+Using ib_srpt fabric module.
+Using qla2xxx fabric module.
+Using iscsi fabric module.
+Using loopback fabric module.
+
+/> iscsi/ info
+Fabric module name: iscsi
+ConfigFS path: /sys/kernel/config/target/iscsi
+Allowed WWNs list type: iqn
+Fabric module specfile: /var/target/fabric/iscsi.spec
+Fabric module features: discovery_auth, acls, acls_auth, nps, tpgts
+Corresponding kernel module: iscsi_target_mod
+/></code></pre>
+<p>Upon targetcli initialization, the underlying RTSlib loads the installed fabric modules, and creates the corresponding ConfigFS mount points (at /sys/kernel/config/target/<fabric>), as specified by the associated spec files (located in /var/target/fabric/fabric.spec).
+
+</p>
+
+<h2>Display the object tree
+</h2>
+<p>Use ls to list the object hierarchy, which is initially empty:
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [0 Storage Object]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>Global parameter <code>auto_cd_after_create</code></strong><br>
+    After the creation of a new object, automatically enter its object context.
+  </div>
+</div>
+<p>Per default, auto_cd_after_create is set to true, which automatically enters an object context (or working directory) after its creation. The examples here are modeled after this behavior.
+
+</p>
+<p>Optionally, set auto_cd_after_create=false to prevent targetcli from automatically entering new object context after their their creation:
+
+</p>
+<pre><code>/> set global auto_cd_after_create=false
+Parameter auto_cd_after_create is now 'false'.
+/></code></pre>
+
+<h2>Create a backstore</h2>
+<p>Create a backstore using the IBLOCK or FILEIO type devices.
+
+</p>
+<p>For instance, enter the top-level backstore context and create an IBLOCK backstore from a /dev/sdb block device:
+
+</p>
+<pre><code>/> cd backstores/
+/backstores> iblock/ create name=my_disk dev=/dev/sdb
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/sdb.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk></code></pre>
+<p>targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+<p>The resulting object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+
+<p>For instance, create an IBLOCK backstore on a logical volume (under /dev/<volume_group_name>/<logical_volume_name>):
+
+</p>
+<pre><code>/backstores> iblock/ create name=my_disk dev=/dev/vg0/lv1
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/vg0/lv1.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk>
+</code></pre>
+<p>Again, targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.</p>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>More backstore examples </strong><br>
+More examples on creating backstores can be found in targetcli.
+  </div>
+</div>
+<h2>Instantiate a target
+</h2>
+<p>Instantiate an iSCSI target on the existing backstore my_disk:
+
+</p>
+<pre><code>/backstores/iblock/my_disk> /iscsi create
+Created target iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11.
+Selected TPG Tag 1.
+Successfully created TPG 1.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1.
+/iscsi/iqn.20...a0e4a11/tpgt1></code></pre>
+
+<p>targetcli automatically creates the Target Portal Group (TPG) and per default assigns a sequentially increasing TPG tag, starting from '1', thereby creating a TPG1.</p>
+
+<h2>Export LUNs
+</h2>
+<p>Add LUNs to the iSCSI target:
+
+</p>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> luns/ create /backstores/iblock/my_disk
+Selected LUN 0.
+Successfully created LUN 0.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1/luns/lun0.
+/iscsi/iqn.20...gt1/luns/lun0>
+</code></pre>
+
+<p>targetcli per default automatically assigns sequentially increasing LUN IDs, starting from '0', thereby exporting /dev/sdb as LUN 0 in the example above.
+
+</p>
+<p>Return to the underlying TPG as the working context, as no attributes need to be set or modified for standard LUNs:
+
+</p>
+<pre><code>/iscsi/iqn.20...gt1/luns/lun0> cd <
+Taking you back to /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1.
+/iscsi/iqn.20...a0e4a11/tpgt1>
+</code></pre>
+
+<h2>Create a newtwork portal</h2>
+<p>Assign an active IP address (here the IPv4 address 192.168.1.139) to the iSCSI TPG to form a valid iSCSI Endpoint:
+
+</p>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> portals/ create 192.168.1.139
+Using default IP port 3260
+Successfully created network portal 192.168.1.139:3260.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1/portals/192.168.1.139:3260.
+/iscsi/iqn.20...68.1.139:3260>
+/iscsi/iqn.20...68.1.139:3260> cd <
+Taking you back to /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1.
+/iscsi/iqn.20...a0e4a11/tpgt1>
+</code></pre>
+<p>For iSCSI Network Portals, targetcli automatically uses the iSCSI default port number of '3260', thereby forming a valid new iSCSI Endpoint. The iSCSI Endpoint makes the TPG discoverable by iSCSI initiators.
+
+</p>
+
+<h2>Define access rights
+</h2>
+<p>Configure the access rights to allow logins from initiators. The three basic setups for LUN authentication are discussed below.
+
+</p>
+<h3>Demo mode
+</h3>
+<p>For simple demo setups, "open" access can be granted to all initiators so that they can access all LUNs in the TPG without further authentication. To enable that so-called "demo mode" TPG operation, disable all authentication for the corresponding Endpoint:
+
+</p>
+<pre><code>For simple demo setups, "open" access can be granted to all initiators so that they can access all LUNs in the TPG without further authentication. To enable that so-called "demo mode" TPG operation, disable all authentication for the corresponding Endpoint:
+
+</code></pre>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> set attribute authentication=0 demo_mode_write_protect=0
+generate_node_acls=1 cache_dynamic_acls=1.
+Parameter demo_mode_write_protect is now '0'.
+Parameter authentication is now '0'.
+Parameter generate_node_acls is now '1'.
+Parameter cache_dynamic_acls is now '1'.
+/iscsi/iqn.20...a0e4a11/tpgt1> cd /
+/></code></pre>
+<p>This exports the IBLOCK backstore as LUN0 to initiators without any access restrictions.
+
+</p>
+<div class="warning-box">
+  <span class="warning-icon"></span>
+  <div class="warning-text">
+    <strong>Demo mode puts your data at risk!</strong><br>
+    Demo mode exports "open" LUNs with no authentication requirements. This creates significant security and data integrity hazards. Do not do this for production setups, unless you are certain of what you are doing.
+  </div>
+</div>
+<p>Use "demo mode" only under the following conditions:
+
+</p>
+<ul>
+    <li>You have established physical security through a closed, controlled SAN environment. </li>
+    <li>You are using your SAN in conjunction with a clustered filesystem that guarantees coherence across multiple initiators, typically via distributed locking.
+</li>
+<li>You have carefully analyzed your ACL setup with regard to its security and data integrity requirements and risks.
+</li>
+  </ul>
+<h2>CHAP initiator authentication
+</h2>
+<p>Enable secure sessions for the initiator with the IQN "iqn.1991-05.com.microsoft:ibm-t410s":
+
+</p>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> acls/ create iqn.1991-05.com.microsoft:ibm-t410s
+Successfully created Node ACL for iqn.1991-05.com.microsoft:ibm-t410s
+Created mapped LUN 0.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1/acls/iqn.1991-05.com.microsoft:ibm-t410s/mapped_lun0.
+/iscsi/iqn.20...s/mapped_lun0> cd <
+Taking you back to /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1.
+/iscsi/iqn.20...a0e4a11/tpgt1>
+</code></pre>
+
+<p>This creates an iSCSI Node ACL with a mapped LUN0.
+
+</p>
+<p>Node ACLs allow mappings of actual LUN IDs onto arbitrary Mapped_LUN IDs, which are the LUN IDs presented to initiators. These mappings can match preferred LUN IDs for particular initiators, so for instance, a LUN1 can be mapped onto Mapped_LUN0 to make LUN1 appear as iSCSI LUN0 on the initiator. Usually, LUNs are identically mapped, however.
+
+</p>
+<p>Setup the CHAP logon information for an initiator, which consists of the userid (login name) and password (target secret) from the initiator:
+
+</p>
+
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> cd acls/iqn.1991-05.com.microsoft:ibm-t410s
+/iscsi/iqn.20...oft:ibm-t410s> set auth userid=iqn.1991-05.com.microsoft:ibm-t410s
+Parameter userid is now 'iqn.1991-05.com.microsoft:ibm-t410s'.
+/iscsi/iqn.20...oft:ibm-t410s> set auth password=mytargetsecret
+Parameter password is now 'mytargetsecret'.
+/iscsi/iqn.20...oft:ibm-t410s> get auth
+AUTH CONFIG GROUP
+  password_mutual=
+    The password_mutual auth parameter.
+
+  userid_mutual=
+    The userid_mutual auth parameter.
+
+  password=mytargetsecret
+    The password auth parameter.
+
+  userid=iqn.1991-05.com.microsoft:ibm-t410
+    The userid auth parameter.
+/iscsi/iqn.20...oft:ibm-t410s> cd /iscsi
+/iscsi></code></pre>
+<p>The iSCSI Endpoint is now ready for secure logins from the specified iSCSI initiator.
+
+</p>
+<div class="notice-box">
+  <span class="notice-icon"></span>
+  <div class="notice-text">
+    <strong>Microsoft Windows iSCSI Initiator</strong><br>
+    The Windows iSCSI Initiator uses its IQN as a default login name. For CHAP Initiator Authentication, it requires the password length to be at least 12 bytes (96 bits), and it rejects passwords that are too simple. The Windows iSCSI Initiator allows changing the default login name through the <em>Targets</em> tab → <em>Connect</em> button → <em>Connect To Target</em> dialog → <em>Advanced…</em> button → <em>Advanced Settings</em> dialog → <em>Enable CHAP log on</em> checkbox.
+  </div>
+</div>
+<h2>Mutual CHAP authentication
+</h2>
+<p>Enable secure sessions for the initiator with the IQN "iqn.1991-05.com.microsoft:ibm-t410s":
+
+</p>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> acls/ create iqn.1991-05.com.microsoft:ibm-t410s
+Successfully created Node ACL for iqn.1991-05.com.microsoft:ibm-t410s
+Created mapped LUN 0.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1/acls/iqn.1991-05.com.microsoft:ibm-t410s/mapped_lun0.
+/iscsi/iqn.20...s/mapped_lun0> cd <
+Taking you back to /iscsi/iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11/tpgt1.
+/iscsi/iqn.20...a0e4a11/tpgt1>
+</code></pre>
+
+<p>This creates an iSCSI Node ACL with a mapped LUN0.
+
+</p>
+<p>Node ACLs allow mappings of actual LUN IDs onto arbitrary Mapped_LUN IDs, which are the LUN IDs presented to initiators. These mappings can match preferred LUN IDs for particular initiators, so for instance, a LUN1 can be mapped onto Mapped_LUN0 to make LUN1 appear as iSCSI LUN0 on the initiator. Usually, LUNs are identically mapped, however.</p>
+<p>Setup the mutual CHAP logon information for an initiator, which consists of:
+
+</p>
+<ul>
+    <li>The userid (login name) and password (target secret) for the target.
+</li>
+    <li>The userid (login name) and password (target secret) for the target.
+</li>
+</ul>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> cd acls/iqn.1991-05.com.microsoft:ibm-t410s
+/iscsi/iqn.20...oft:ibm-t410s> set auth userid=iqn.1991-05.com.microsoft:ibm-t410s password=mytargetsecret userid_mutual=iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11 password_mutual=mymutualsecret
+Parameter userid is now 'iqn.1991-05.com.microsoft:ibm-t410s'.
+Parameter password is now 'mytargetsecret'.
+Parameter userid_mutual is now 'iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11'.
+Parameter password is now 'mymutualsecret'.
+/iscsi/iqn.20...oft:ibm-t410s> get auth
+AUTH CONFIG GROUP
+  password_mutual=mymutualsecret
+    The password_mutual auth parameter.
+
+  userid_mutual=iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11
+    The userid_mutual auth parameter.
+
+  password=mytargetsecret
+    The password auth parameter.
+
+  userid=iqn.1991-05.com.microsoft:ibm-t410
+    The userid auth parameter.
+/iscsi/iqn.20...oft:ibm-t410s> cd /iscsi
+/iscsi></code></pre>
+<p>The iSCSI Endpoint is now ready for secure logins from the specified iSCSI initiator.
+
+</p>
+<div class="notice-box">
+  <span class="notice-icon"></span>
+  <div class="notice-text">
+    <strong>Microsoft Windows iSCSI Initiator</strong><br>
+   The Windows iSCSI Initiator uses its IQN as the default login name. For Mutual CHAP Authentication, it requires the password length to be between 12 bytes (96 bits) and 16 bytes (128 bits), and it rejects passwords that are too simple. The Windows iSCSI Initiator allows changing the default login name through the Targets tab → Connect button → Connect To Target dialog → Advanced… button → Advanced Settings dialog → Enable CHAP log on checkbox.
+  </div>
+</div>
+
+<h2>TPG authentication
+</h2>
+<p>Setting up authentication information for every single initiator separately can be cumbersome, so targetcli provides the capability to define common login information for all Endpoints in a TPG. As a result, all initiators connecting to that TPG can use the same login credentials.</p>
+<p>Enable TPG Authentication for all Endpoints in a TPG:
+
+</p>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> /iscsi/iqn.2003-01.org.linuxiscsi.
+san01.x8664:sn.bf919196ff4e/tgpt1/ set attribute demo_mode_write_protect=0 generate_node_acls=1
+cache_dynamic_acls=1
+Parameter demo_mode_write_protect is now '0'.
+Parameter generate_node_acls is now '1'.
+Parameter cache_dynamic_acls is now '1'.
+/iscsi/iqn.20...a0e4a11/tpgt1></code></pre>
+<p>Setup the the common TPG Authentication credentials for all Endpoints in a TPG, which consists of:
+
+</p>
+<ul>
+    <li>The userid (login name) and password (target secret) for the target.
+</li>
+<li>The userid_mutual (login name) and password_mutual (initiator secret) for the initiator.
+</li>
+</ul>
+<pre><code>/iscsi/iqn.20...a0e4a11/tpgt1> set auth userid=rts-user
+Parameter userid is now 'rts-user'.
+/iscsi/iqn.20...a0e4a11/tpgt1> set auth password=b492785e-bc91-4710
+Parameter password is now 'b492785e-bc91-4710'.
+/iscsi/iqn.20...a0e4a11/tpgt1> set auth userid_mutual=mutual-rts-user
+Parameter userid_mutual is now 'mutual-rts-user'.
+/iscsi/iqn.20...a0e4a11/tpgt1> set auth password_mutual=aeae2e26-f043-42a7
+Parameter password_mutual is now 'aeae2e26-f043-42a7'.
+/iscsi/iqn.20...a0e4a11/tpgt1> get auth
+AUTH CONFIG GROUP
+  authenticate_target=0 [ro]
+    The authenticate_target auth_attr.
+
+  password=b492785e-bc91-4710
+    The password auth_attr.
+
+  password_mutual=aeae2e26-f043-42a7
+    The password_mutual auth_attr.
+
+  userid=rts-user
+    The userid auth_attr.
+
+  userid_mutual=mutual-rts-user
+    The userid_mutual auth_attr.
+/iscsi/iqn.20...a0e4a11/tpgt1></code></pre>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>Individual ACLs</strong><br>
+    Login credentials for specific initiators can be created by adding corresponding ACL entries, as individual ACL entries override common TPG Authentication information.
+
+  </div>
+</div>
+<div class="notice-box">
+  <span class="notice-icon"></span>
+  <div class="notice-text">
+    <strong>Microsoft Windows iSCSI Initiator </strong><br>
+    The Windows iSCSI Initiator uses its IQN as the default login name. For Mutual CHAP Authentication, it requires the password length to be between 12 bytes (96 bits) and 16 bytes (128 bits), and it rejects passwords that are too simple. The Windows iSCSI Initiator allows changing the default login name through the Targets tab → Connect button → Connect To Target dialog → Advanced… button → Advanced Settings dialog → Enable CHAP log on checkbox.
+
+
+  </div>
+</div>
+<h2>Enable discovery control
+</h2>
+<p>Optionally, the iSCSI protocol can also control the visibility of iSCSI targets for discovery by iSCSI initiators.
+
+</p>
+<h2>CHAP initiator discovery authentication
+</h2>
+<p>Enable CHAP initiator discovery authentication for all initiators by setting up a CHAP userid (login name) and password (target secret) in the global discovery_auth group:
+
+</p>
+<pre><code>/iscsi> set discovery_auth enable=1 userid=mytargetuid password=mytargetsecret
+Parameter enable is now '1'.
+Parameter password is now 'mytargetsecret'.
+Parameter userid is now 'mytargetuid'.
+/iscsi>
+</code></pre>
+<p>Only iSCSI initiators that can authenticate themselves with a user id of "mytargetuid" and a password of "mytargetsecret" can now discover this iSCSI target.
+
+</p>
+<h2>Mutual CHAP discovery authentication
+</h2>
+<p>Enable Mutual CHAP discovery authentication for all initiators by setting up Mutual CHAP information in the global discovery_auth group:
+
+</p>
+<ul>
+    <li>The userid (login name) and password (target secret) for the target.
+</li>
+    <li>The mutual_userid (login name) and mutual_password (initiator secret) for initiators.
+</li>
+</ul>
+<pre><code>/iscsi> set discovery_auth enable=1 userid=mytargetuid password=mytargetsecret
+mutual_userid=mymutualuid mutual_password=mymutualsecret
+Parameter password is now 'mytargetsecret'.
+Parameter userid is now 'mytargetuid'.
+Parameter mutual_password is now 'mymutualsecret'.
+Parameter mutual_userid is now 'mymutualuid'.
+Parameter enable is now '1'.
+/iscsi> get discovery_auth
+DISCOVERY_AUTH CONFIG GROUP
+  enable=1
+    The enable discovery_auth parameter.
+
+  mutual_password=mymutualsecret
+    The mutual_password discovery_auth parameter.
+
+  mutual_userid=mymutualuid
+    The mutual_userid discovery_auth parameter.
+
+  password=mytargetsecret
+    The password discovery_auth parameter.
+
+  userid=mytargetuid
+    The userid discovery_auth parameter.
+/iscsi></code></pre>
+<p>Only iSCSI initiators that can authenticate themselves with a user id of "mytargetuid" and a password of "mytargetsecret" can now discover this iSCSI target, and conversely, the iSCSI target can only discover iSCSI initiators that can authenticate themselves with a user id of "mymutualuid" and a password of "mymutualsecret".
+
+</p>
+<h2>Display the object tree
+</h2>
+<p>The resulting iSCSI object hierarchy with CHAP Authentication (initiator or mutual) for one initiator looks as follows (displayed from the root object):
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [1 Target]
+  | o- iqn.2003-01.org.linux-iscsi.san01.x8664:sn.05135a0e4a11 ......... [1 TPG]
+  |   o- tpgt1 ....................................................... [enabled]
+  |     o- acls ........................................................ [1 ACL]
+  |     | o- iqn.1991-05.com.microsoft:ibm-t410s ................ [1 Mapped LUN]
+  |     |   o- mapped_lun0 ......................................... [lun0 (rw)]
+  |     o- luns ........................................................ [1 LUN]
+  |     | o- lun0 .................................. [iblock/my_disk (/dev/sdb)]
+  |     o- portals .................................................. [1 Portal]
+  |       o- 192.168.1.139:3260 ........................................... [OK]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+<h2>Object tree</h2>
+<p>The resulting object tree looks as follows:
+
+</p>
+<pre><code>o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- sdb .............................................. [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- iscsi .......................................................... [1 Target]
+    o- iqn.2003-01.org.linux-iscsi.x.x8664:sn.d3d8b0500fde ............. [1 TPG]
+      o- tpgt1 ....................................................... [enabled]
+        o- acls ........................................................ [1 ACL]
+        | o- iqn.2003-01.org.linux-iscsi.y.x8664:sn.abcdefghijkl. [1 Mapped LUN]
+        |   o- mapped_lun0 ......................................... [lun0 (rw)]
+        o- luns ........................................................ [1 LUN]
+        | o- lun0 ...................................... [iblock/sdb (/dev/sdb)]
+        o- portals .................................................. [1 Portal]
+          o- 192.168.1.128:5060 ........................................... [OK]</code></pre>
+          
+<h2>Scripting with RTSlib</h2>
+<h2>Setup Script</h2>
+<p>The following Python code illustrates how to setup a basic iSCSI target and export a mapped LUN:
+
+</p>
+<pre><code class="language-python">#!/usr/bin/python
+# iSCSI setup script example with RTSlib
+from rtslib import *
+
+# Setup an IBLOCK backstore
+backstore = IBlockBackstore(3, mode='create')
+try:
+    so = IBlockStorageObject(backstore, "sdb", "/dev/sdb", gen_wwn=True)
+except:
+    backstore.delete()
+    raise
+
+# Create an iSCSI target endpoint using an iSCSI IQN
+fabric = FabricModule('iscsi')
+target = Target(fabric, "iqn.2003-01.org.linux-iscsi.x.x8664:sn.d3d8b0500fde")
+tpg = TPG(target, 1)
+
+# Setup a network portal in the iSCSI TPG
+# The IP address must already be active on the system
+portal = NetworkPortal(tpg, "192.168.1.128", "5060")
+
+# Export LUN 0 via the 'so' StorageObject class
+lun0 = tpg.lun(0, so, "my_lun")
+
+# Setup the NodeACL for an iSCSI initiator, and create MappedLUN 0
+node_acl = tpg.node_acl("iqn.2003-01.org.linux-iscsi.y.x8664:sn.abcdefghijkl")
+mapped_lun = node_acl.mapped_lun(0, 0, False)</code></pre>
+</section>
+
+  </main>
+
+  
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+
+  <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="www.linkedin.com/in/max-christie-005022255" target = "_blank">
+        Max Christie
+        </a>
+      .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

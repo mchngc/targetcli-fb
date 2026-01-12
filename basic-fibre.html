@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+  <main class ="container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+    <h1>Fibre Channel</h1>
+    <h2>Overview</h2>
+    <p>Fibre Channel (FC) provides drivers for various FC Host Bus Adapters (HBAs). Fibre Channel is a gigabit-speed network technology primarily used for storage networking.</p>
+      
+    <p>Fibre Channel is standardized in the T11 Technical Committee of the Inter National Committee for Information Technology Standards (INCITS), an American National Standards Institute (ANSI) - accredited standards committee.</p>
+
+    <p>Fibre Channel has been the standard connection type for storage area networks (SAN) in enterprise storage. Despite its name, Fibre Channel signaling can run on both twisted pair copper wire and fiber-optic cables.</p>
+
+    <p>The Fibre Channel Protocol (FCP) is a transport protocol which predominantly transports SCSI commands over Fibre Channel networks. </p>
+
+    <h2>Hardware Support</h2>
+    <p>The following QLogic Fiber Channel HBAs are supported in 4/8-gigabit mode:</p>
+    <ul>
+        <li>QLogic 2400 Series (QLx246x), 4GFC</li>
+        <li>QLogic 2500 Series (QLE256x), 8GFC (fully qual'd)</li>
+    </ul>
+
+    <p>The QLogic Fibre Channel fabric module (qla2xxx.ko, Linux kernel driver database) for the Linux SCSI Target was released with Linux kernel 3.5 on July 21, 2012.</p>
+
+    <p>With Linux 3.9, the following 16-gigabit QLogic Fibre Channel HBA is supported, which makes LIO the first open source target to support 16GFC:</p>
+
+    <ul>
+        <li>QLogic 2600 Series (QLE266x), 16GFC, SR-IOV</li>
+    </ul>
+
+    <p>With Linux 3.9, the following QLogic CNAs are also supported:</p>
+    <ul>
+        <li>QLogic 8300 Series (QLE834x), 16GFS/10 GbE, PCIe Gen3 SR-IOV
+</li>
+    <li>QLogic 8100 Series (QLE81xx), 8GFC/10 GbE, PCIe Gen2
+</li>
+    </ul>
+
+    <h2>Enable target mode</h2>
+    <p>By default, the upstream qla2xxx driver runs in initiator mode. To use it with LIO, first enable Fibre Channel target mode with the corresponding qlini_mode module parameter</p>
+    <p>To enable target mode, add the following parameter to the qla2xxx module configuration file:
+
+</p>
+    <pre><code>options qla2xxx qlini_mode="disabled"
+</code></pre>
+
+<p>Depending on your distribution, the module configuration file might be different, for instance:
+
+</p>
+<ul>
+    <li>/etc/modprobe.d/qla2xxx.conf: CentOS, Debian, Fedora, RHEL, Scientific Linux
+
+</li>
+    <li>/etc/modprobe.conf.local: openSUSE, SLES
+</li>
+</ul>
+<p>In order for these changes to take effect, the initrd/initramfs will need to be rebuilt.
+
+</p>
+<p>Please verify that initrd/initramfs is accepting the additional qla2xxx parameter.
+
+</p>
+<h2>targetcli</h2>
+<p>targetcli is used to configure Fibre Channel targets. targetcli aggregates LIO service modules via a core library, and exports them through an API, to provide a unified single-node SAN configuration shell, independently of the underlying fabric(s).
+
+</p>
+
+<h2>Cheat sheet</h2>
+<table>
+  <tr>
+    <th>Command</th>
+    <th>Commemnt</th>
+  </tr>
+  <tr>
+    <td>/backstores/iblock create my_disk /dev/sdb	</td>
+    <td>Create the LUN my_disk on the device /dev/sdb</td>
+  </tr>
+  <tr>
+    <td>//qla2xxx create &lt;WWPN&gt;	</td>
+    <td>Create an Fibre Channel target</td>
+  </tr>
+  <tr>
+    <td>In /qla2xxx/&lt;WWPN&gt;:
+luns/ create /backstores/iblock/my_disk</td>
+    <td>Export the LUN my_disk</td>
+  </tr>
+  <tr>
+    <td>In /qla2xxx/&lt;WWPN&gt;:
+acls/ create &lt;Initiator WWPN&gt;</td>
+<td>Allow access for the initiator at &lt;WWPN&gt;
+</td>
+  </tr>
+  <tr>
+    <td>/saveconfig	</td>
+<td>Commit the configuration</td>
+
+</table>
+<h3>Startup</h3>
+<p>targetcli is invoked by running targetcli as root from the command prompt of the underlying LIO shell.
+
+</p>
+<pre><code># targetcli
+Welcome to targetcli:
+
+ Copyright (c) 2014 by Datera, Inc.
+ All rights reserved.
+
+Visit us at http://www.datera.io.
+
+Using ib_srpt fabric module.
+Using qla2xxx fabric module.
+Using iscsi fabric module.
+Using loopback fabric module.
+
+/> qla2xxx/ info
+Fabric module name: qla2xxx
+ConfigFS path: /sys/kernel/config/target/qla2xxx
+Allowed WWN list type: free
+Fabric module specfile: /var/target/fabric/qla2xxx.spec
+Fabric module features: acls
+Corresponding kernel module: tcm_qla2xxx
+/></code></pre>
+
+<p>Upon targetcli initialization, the underlying RTSlib loads the installed fabric modules, and creates the corresponding ConfigFS mount points (at /sys/kernel/config/target/<fabric>), as specified by the associated spec files (located in /var/target/fabric/fabric.spec).
+
+</p>
+
+<h3>Display the object tree
+</h3>
+<p>Use ls to list the object hierarchy, which is initially empty:
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [0 Storage Object]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>Global parameter auto_cd_after_create</strong><br>
+    After the creation of a new object, automatically enter its object context.
+
+  </div>
+</div>
+
+<p>Per default, auto_cd_after_create is set to true, which automatically enters an object context (or working directory) after its creation. The examples here are modeled after this behavior.
+
+</p>
+
+<p>Optionally, set auto_cd_after_create=false to prevent targetcli from automatically entering new object contexts after their creation:
+
+</p>
+<pre><code>/> set global auto_cd_after_create=false
+Parameter auto_cd_after_create is now 'false'.
+/></code></pre>
+
+<h3>Create a backstore
+</h3>
+<p>Create a backstore using the IBLOCK or FILEIO type devices.
+
+</p>
+<p>For instance, enter the top-level backstore context and create an IBLOCK backstore from a /dev/sdb block device:
+
+</p>
+<pre><code>/> cd backstores/
+/backstores> iblock/ create name=my_disk dev=/dev/sdb
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/sdb.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk>
+</code></pre>
+<p>targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+
+<p>The resulting object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+
+
+</p>
+<p>For instance, create an IBLOCK backstore on a logical volume (under /dev/<volume_group_name>/<logical_volume_name>):
+
+</p>
+<pre><code>/backstores> iblock/ create name=my_disk dev=/dev/vg0/lv1
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/vg0/lv1.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk></code></pre>
+<p>Again, targetcli automatically creates a WWN serial ID for the backstore devices and then changes the working context to it.
+
+</p>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>More backstore examples</strong><br>
+    More examples on creating backstores can be found in targetcli.
+
+
+  </div>
+</div>
+<h3>Instantiate a target</h3>
+<p>The Fibre Channel ports that are available on the storage array are presented in the WWN context with the following WWNPs, for instance:
+
+</p>
+<ul>
+    <li>21:00:00:24:ff:31:4c:48
+</li>
+<li>21:00:00:24:ff:31:4c:49
+</li>
+</ul>
+<p>Instantiate a Fibre Channel target, in this example for QLogic HBAs, on the existing IBLOCK backstore device my_disk (as set up in targetcli):
+
+</p>
+<pre><code>/backstores/iblock/my_disk> /qla2xxx create 21:00:00:24:ff:31:4c:48
+Created target 21:00:00:24:ff:31:4c:48.
+Entering new node /qla2xxx/21:00:00:24:ff:31:4c:48.
+/qla2xxx/21:0...4:ff:31:4c:48></code></pre>
+<p>targetcli automatically changes the working context to the resulting tagged Endpoint.
+
+</p>
+<h3>Export LUNs
+</h3>
+<p>Declare LUNs for the backstore device, to form a valid SAN storage object:
+
+</p>
+<pre><code>/qla2xxx/21:0...4:ff:31:4c:48> luns/ create /backstores/iblock/my_disk
+Selected LUN 0.
+Successfully created LUN 0.
+Entering new node /qla2xxx/21:00:00:24:ff:31:4c:48/luns/lun0.
+/qla2xxx/21:0...:48/luns/lun0></code></pre>
+
+<p>targetcli per default automatically assigns the default ID '0' to the LUN, and then changes the working context to the new SAN storage object. The target is now created, and exports /dev/sdb as LUN 0.
+
+</p>
+<p>Return to the underlying Endpoint as the working context, as no attributes need to be set or modified for standard LUNs:
+
+</p>
+<pre><code>/qla2xxx/21:0...:48/luns/lun0> cd <
+Taking you back to /qla2xxx/21:00:00:24:ff:31:4c:48.
+/qla2xxx/21:0...4:ff:31:4c:48></code></pre>
+<h2>Define access rights</h2>
+<p>Configure the access rights to allow logins from initiators. This requires setting up individual access rights for each initiator, based on its WWPN.
+
+</p>
+<p>Determine the WWPN for the respective Fibre Channel initiator. For instance, for Linux initiator systems, use:
+
+</p>
+<pre><code># cat /sys/class/fc_host/host*/port_name | sed -e s/0x// -e 's/../&:/g' -e s/:$//
+</code></pre>
+<p>For a simple setup, grant access to the initiator with the WWPN as determined above:
+
+</p>
+<pre><code>/qla2xxx/21:0...4:ff:31:4c:48> acls/ create 21:00:00:24:ff:31:4c:4c
+Successfully created Node ACL for 21:00:00:24:ff:31:4c:4c.
+Created mapped LUN 0.
+Entering new node /qla2xxx/21:00:00:24:ff:31:4c:48/acls/21:00:00:24:ff:31:4c:4c.
+/qla2xxx/21:0...4:ff:31:4c:4c> cd /
+/>
+</code></pre>
+<p>targetcli per default automatically adds the appropriate mapped LUNs.
+
+</p>
+<h3>Display the object tree
+</h3>
+<p>The resulting Fibre Channel SAN object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code>/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [1 Target]
+    o- 21:00:00:24:ff:31:4c:48 ....................................... [enabled]
+      o- acls .......................................................... [1 ACL]
+      | o- 21:00:00:24:ff:31:4c:4c .............................. [1 Mapped LUN]
+      |   o- mapped_lun0 ........................................... [lun0 (rw)]
+      o- luns .......................................................... [1 LUN]
+        o- lun0 .................................... [iblock/my_disk (/dev/sdb)]
+/></code></pre>
+
+
+<h2>Scripting with RTSlib
+</h2>
+<h3>Setup script
+</h3>
+
+<p>The following Python code illustrates how to setup a basic Fibre Channel target and export a mapped LUN:
+
+</p>
+<pre><code class="language-python">#!/usr/bin/python
+# Fibre Channel setup script example with RTSlib
+from rtslib import *
+
+# Setup an IBLOCK backstore
+backstore = IBlockBackstore(3, mode='create')
+try:
+    so = IBlockStorageObject(backstore, "fioa", "/dev/fioa", gen_wwn=True)
+except:
+    backstore.delete()
+    raise
+
+# Create an FC target endpoint using a qla2xxx WWPN
+fabric = FabricModule('qla2xxx')
+target = Target(fabric, '21:00:00:24:ff:31:4c:48')
+tpg = TPG(target, 1)
+
+# Export LUN 0 via the 'so' StorageObject class
+lun0 = tpg.lun(0, so, "my_lun")
+
+# Setup the NodeACL for an FC initiator, and create MappedLUN 0
+node_acl = tpg.node_acl('21:00:00:24:ff:31:4c:4c')
+mapped_lun = node_acl.mapped_lun(0, 0, False)</code></pre>
+
+<p>Note that while Fibre Channel TPGs are masked by targetcli, they are not masked by RTSlib.
+
+</p>
+<h3>Object tree
+</h3>
+<p>The resulting object tree looks as follows:
+
+</p>
+<pre><code>o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [1 Target]
+    o- 21:00:00:24:ff:31:4c:48 ....................................... [enabled]
+      o- acls .......................................................... [0 ACL]
+      | o- 21:00:00:24:ff:31:4c:4c .............................. [1 Mapped LUN]
+      |   o- mapped_lun0 ........................................... [lun0 (rw)]
+      o- luns .......................................................... [1 LUN]
+        o- lun0 .................................... [iblock/my_disk (/dev/sdb)]</code></pre>
+
+<h2>Specifications</h2>
+<p>The following specifications are available as T10 Working Drafts:
+
+</p>
+<ul>
+    <li>Fibre Channel Protocol (FCP): FCP defines the protocol to be used to transport SCSI commands over the T11 Fibre Channel interface, 1995-12-04</li>
+    <li>SCSI Fibre Channel Protocol - 2 (FCP-2): FCP-2 defines the second generation Fibre Channel Protocol to be used to transport SCSI commands over the T11 Fibre Channel interface, 2002-10-23</li>
+    <li>Fibre Channel Protocol - 3 (FCP-3): FCP-3 defines the third generation Fibre Channel Protocol to be used to transport SCSI commands over the T11 Fibre Channel interface, 2005-09-13</li>
+    <li>Fibre Channel Protocol - 4 (FCP-4): FCP-4 defines the fouth generation Fibre Channel Protocol to be used to transport SCSI commands over the T11 Fibre Channel interface, 2010-11-09
+</li>
+</ul>
+<h2>Glossary</h2>
+<p>Host Bus Adapter (HBA): provides the mechanism to connect Fibre Channel devices to processors and memory.
+</p>
+
+</section>
+
+  </main>
+
+  
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+
+
+  <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="www.linkedin.com/in/max-christie-005022255" target = "_blank">
+        Max Christie
+        </a>
+      .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

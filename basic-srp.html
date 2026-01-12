@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+   <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+  <main class ="container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+<h1>SCSI RDMA Protocol</h1>
+<h2>Overview</h2>
+<p>The SCSI RDMA Protocol (SRP) is a network protocol that allows one computer system to access SCSI devices attached to another computer system via RDMA.[1][2]
+
+</p>
+<p>SRP was designed to use RDMA networks efficiently. RDMA allows lower latencies and higher throughput than TCP/IP protocols, but requires network adapters with native RDMA support, e.g., HCAs for InfiniBand, RNICs on "lossless" (DCB) Ethernet, or TOE NICs with iWARP for standard Ethernet.
+
+</p>
+<p>SRP is based on the SCSI protocol, which is a point-to-point protocol with corresponding design limitations. In contrast, iSER is based on iSCSI, and thus better accommodates modern network requirements, including complex topologies, multipathing, target discovery, etc. Hence, iSER is most likely the best choice for InfiniBand networks going forward.
+
+</p>
+<p>SRP never became an official standard: the latest draft of the SRP protocol, revision 16a, dates from July 3, 2002.[1]
+
+</p>
+<p>The InfiniBand/SRP fabric module (srpt.ko, Linux kernel driver database) for the LinuxIO was released with Linux kernel 3.3 on March 18, 2012.[3]
+
+</p>
+<h2>targetcli</h2>
+<p>targetcli is used to configure InfiniBand targets. targetcli aggregates LIO service modules via a core library, and exports them through an API, to provide a unified single-node SAN configuration shell, independently of the underlying fabric(s).
+
+</p>
+
+<h3>Cheat sheet</h3>
+<table>
+  <tr>
+    <th>Command</th>
+    <th>Commemnt</th>
+  </tr>
+  <tr>
+    <td>/backstores/iblock create my_disk /dev/sdb	</td>
+    <td>Create the LUN my_disk on the device /dev/sdb</td>
+  </tr>
+  <tr>
+    <td>//ib_srpt create &lt;WWPN&gt;	</td>
+    <td>Create an SRP target</td>
+  </tr>
+  <tr>
+    <td>In /ib_srpt/&lt;WWPN&gt;:
+luns/ create /backstores/iblock/my_disk</td>
+    <td>Export the LUN my_disk</td>
+  </tr>
+  <tr>
+    <td>In  /ib_srpt/&lt;WWPN&gt;:
+acls/ create &lt;Initiator WWPN&gt;</td>
+<td>Allow access for the initiator at &lt;WWPN&gt;
+</td>
+  </tr>
+  <tr>
+    <td>/saveconfig	</td>
+<td>Commit the configuration</td>
+
+</table>
+
+<h3>Startup</h3>
+<p>targetcli is invoked by running targetcli as root from the command prompt of the underlying LIO shell.
+
+</p>
+<pre><code class="language-bash"># targetcli
+Welcome to targetcli:
+
+ Copyright (c) 2014 by Datera, Inc.
+ All rights reserved.
+
+Visit us at http://www.datera.io.
+
+Using ib_srpt fabric module.
+Using qla2xxx fabric module.
+Using iscsi fabric module.
+Using loopback fabric module.
+
+/> ib_srpt/ info
+Fabric module name: ib_srpt
+ConfigFS path: /sys/kernel/config/target/srpt
+Allowed WWN list type: free
+Fabric module specfile: /var/target/fabric/ib_srpt.spec
+Fabric module features: acls
+Corresponding kernel module: ib_srpt
+/></code></pre>
+<p>Upon targetcli initialization, the underlying RTSlib loads the installed fabric modules, and creates the corresponding ConfigFS mount points (at /sys/kernel/config/target/<fabric>), as specified by the associated spec files (located in /var/target/fabric/fabric.spec).
+
+</p>
+<h3>Display the object tree
+</h3>
+<p>Use ls to list the object hierarchy, which is initially empty:
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [0 Storage Object]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/>
+</code></pre>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>Global parameter auto_cd_after_create</strong><br>
+After the creation of a new object, automatically enter its object context.
+  </div>
+</div>
+<p>Per default, auto_cd_after_create is set to true, which automatically enters an object context (or working directory) after its creation. The examples here are modeled after this behavior.
+
+</p>
+<p>Optionally, set auto_cd_after_create=false to prevent targetcli from automatically entering new object contexts after their creation:
+
+</p>
+<pre><code class="language-bash">/> set global auto_cd_after_create=false
+Parameter auto_cd_after_create is now 'false'.
+/></code></pre>
+<h3>Create a backstore</h3>
+<p>Create a backstore using the IBLOCK or FILEIO type devices.
+
+</p>
+<p>For instance, enter the top-level backstore context and create an IBLOCK backstore from a /dev/sdb block device:
+
+</p>
+<pre><code class="language-bash">/> cd backstores/
+/backstores> iblock/ create name=my_disk dev=/dev/sdb
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/sdb.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk></code></pre>
+<p>targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+<p>The resulting object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+
+</p>
+<p>For instance, create an IBLOCK backstore on a logical volume (under /dev/&lt;volume_group_name&gt;/&lt;logical_volume_name&gt;):
+
+</p>
+<pre><code class="language-bash">/backstores> iblock/ create name=my_disk dev=/dev/vg0/lv1
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/vg0/lv1.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk>
+</code></pre>
+<p>Again, targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>More backstore examples</strong><br>
+More examples on creating backstores can be found in targetcli.
+  </div>
+</div>
+<h3>Instantiate a target
+</h3>
+<p>The InfiniBand ports that are available on the storage array are presented in the WWN context with the following WWPNs, for instance:
+
+</p>
+<ul>
+  <li>0x00000000000000000002c903000e8acd
+</li>
+<li>0x00000000000000000002c903000e8ace</li>
+</ul>
+<p>Instantiate an InfiniBand target, in this example for SRP over Mellanox Connect-X HCAs, on the existing IBLOCK backstore device my_disk (as set up in targetcli):
+
+</p>
+<pre><code class="language-bash">/backstores/iblock/my_disk> /ip_srpt create 0x00000000000000000002c903000e8acd
+Created target 0x00000000000000000002c903000e8acd.
+Entering new node /ib_srpt/0x00000000000000000002c903000e8acd.
+/ib_srpt/0x00...2c903000e8acd></code></pre>
+<p>targetcli automatically changes the working context to the resulting tagged Endpoint.
+
+</p>
+<h3>Export LUNs</h3>
+<p>Declare a LUN for the backstore device, to form a valid SAN storage object:
+
+</p>
+<pre><code class="language-bash">/ib_srpt/0x00...2c903000e8acd> luns/ create /backstores/iblock/my_disk
+Selected LUN 0.
+Successfully created LUN 0.
+Entering new node /ib_srpt/0x00000000000000000002c903000e8acd/luns/lun0.
+/ib_srpt/0x00...acd/luns/lun0>
+</code></pre>
+<p>targetcli per default automatically assigns the default ID '0' to the LUN, and then changes the working context to the SAN storage object. The target is now created, and exports /dev/sdb as LUN 0.
+
+</p>
+<p>Return to the underlying Endpoint as the working context, as no attributes need to be set or modified for standard LUNs:
+
+</p>
+<pre><code class="language-bash">/ib_srpt/0x00...act/luns/lun0> cd <
+Taking you back to /ib_srpt/0x00000000000000000002c903000e8acd.
+/ib_srpt/0x00...2c903000e8acd></code></pre>
+<h3>Define access rights</h3>
+<p>Configure the access rights to allow logins from initiators. This requires setting up individual access rights for each initiator, based on its WWPN.
+
+</p>
+<p>Determine the WWPN for the respective InfiniBand initiator. For instance, for Linux initiator systems, use:
+
+</p>
+<pre><code class="language-bash"># cat /sys/class/infiniband/*/ports/*/gids/0 | sed -e s/fe80/0x0000/ -e 's/\://g'
+</code></pre>
+<p>For a simple setup, allow access to the initiator with the WWPN as determined above:
+
+</p>
+<pre><code class="language-bash">/ib_srpt/0x00...2c903000e8acd> acls/ create 0x00000000000000000002c903000e8be9
+Successfully created Node ACL for 0x00000000000000000002c903000e8be9.
+Created mapped LUN 0.
+Entering new node /ib_srpt/0x00000000000000000002c903000e8acd/acls/
+0x00000000000000000002c903000e8be9.
+/ib_srpt/0x00...2c903000e8be9> cd /</code></pre>
+<p>targetcli per default automatically adds the appropriate mapped LUNs.
+
+</p>
+<h3>Display the object tree
+</h3>
+<p>The resulting InfiniBand SAN object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [1 Target]
+  | o- 0x00000000000000000002c903000e8acd ............................ [enabled]
+  |   o- acls .......................................................... [1 ACL]
+  |   | o- 0x00000000000000000002c903000e8be9 ................... [1 Mapped LUN]
+  |   |   o- mapped_lun0 ........................................... [lun0 (rw)]
+  |   o- luns .......................................................... [1 LUN]
+  |     o- lun0 .................................... [iblock/my_disk (/dev/sdb)]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+<h3>Persist the configuration
+</h3>
+<div class="warning-box">
+  <span class="warning-icon"></span>
+  <div class="warning-text">
+    <strong>Don't forget to use saveconfig!</strong><br>
+Without saveconfig, the LIO configuration will be lost upon rebooting or unloading the target service, as it will revert back to the last saved one.
+  </div>
+</div>
+<p>Use saveconfig from the root context to persist the LIO configuration across LIO reboots:
+
+</p>
+<pre><code/> saveconfig
+WARNING: Saving rtsnode1 current configuration to disk will overwrite your boot settings.
+The current target configuration will become the default boot config.
+Are you sure? Type 'yes': yes
+Making backup of srpt/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/srpt_start.sh
+Making backup of qla2xxx/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/qla2xxx_start.sh
+Making backup of loopback/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/loopback_start.sh
+Making backup of LIO-Target/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/lio_backup-2012-02-27_23:19:37.660264.sh
+Making backup of Target_Core_Mod/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/tcm_backup-2012-02-27_23:19:37.660264.sh
+Generated Target_Core_Mod config: /etc/target/backup/tcm_backup-2012-02-27_23:19:37.660264.sh
+Successfully updated default config /etc/target/lio_start.sh
+Successfully updated default config /etc/target/tcm_start.sh
+/></code></pre>
+<h3>Object tree</h3>
+<p>The resulting object tree looks as follows:
+
+</p>
+<pre><code class="language-bash">o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [1 Target]
+    o- 0x00000000000000000002c903000e8acd ............................ [enabled]
+      o- acls .......................................................... [1 ACL]
+      | o- 0x00000000000000000002c903000e8be9 ................... [1 Mapped LUN]
+      |   o- mapped_lun0 ........................................... [lun0 (rw)]
+      o- luns .......................................................... [1 LUN]
+        o- lun0 .................................... [iblock/my_disk (/dev/sdb)]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]</code></pre>
+<h2>Specifications
+</h2>
+<p>SRP was not approved as an official standard. The following specifications are available as available as T10 Working Drafts:
+
+</p>
+<ul>
+  <li>SCSI RDMA Protocol (SRP): SRP defines a SCSI protocol mapping onto the InfiniBand (tm) Architecture and/or functionally similar cluster protocols. ANSI INCITS 365-2002. Status: Final Draft. 2002-07-03
+</li>
+</ul>
+</section>
+
+  </main>
+
+  <script>
+    
+</script>
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+
+  <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="www.linkedin.com/in/max-christie-005022255" target = "_blank">
+        Max Christie
+        </a>
+      .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+ 
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+  <main class ="container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+    <h1>IBM vSCSI</h1>
+    <h2>Overview</h2>
+    <p>The IBM vSCSI fabric module provides virtualized LinuxIO devices on the IBM System p.
+
+    </p>
+    <p>IBM vSCSI is based on a fabric module from Tomonori Fujita from NTT Labs. The fabric module (ibmvscsis.ko) for LIO currently remains out-of-tree.
+
+</p>
+
+<h2>Modules</h2>
+<p>ismod output:</p>
+<pre><code>Module                  Size  Used by
+ibmvscsis              22024  4 
+libsrp                  9242  1 ibmvscsis
+scsi_tgt               15597  1 libsrp
+target_core_file       10766  1 
+target_core_mod       266898  10 ibmvscsis,target_core_file
+configfs               33950  2 target_core_mod</code></pre>
+<h2>targetcli</h2>
+<p>targetcli is used to configure vhost-scsi targets. targetcli aggregates LIO service modules via a core library, and exports them through an API, to provide a unified single-node SAN configuration shell, independently of the underlying fabric(s).
+
+</p>
+
+
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+ <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="www.linkedin.com/in/max-christie-005022255" target = "_blank">
+        Max Christie
+        </a>
+      .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+  
+</body>
+</html>

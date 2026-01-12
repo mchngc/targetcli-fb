@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+  <main class = "container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+  <h1>tcm_loop</h1>
+    <h2>Overview</h2>
+    <p>tcm_loop is a fabric module that can emulate any supported fabric type locally for LinuxIO.
+
+</p>
+  <p>tcm_loop provides full local SCSI device emulation (SPC-3 and SPC-4) for raw block storage objects. It thus makes any raw block device apear to the LinuxIO as a full SPC-3/SPC-4 SCSI compliant device with the corresponding CDB-level SAS emulation, for access from any SCSI LLD driver.
+
+</p>
+<p>tcm_loop minimizes overhead - it delivers >12 GB/s (native) and >2 GB/s (from a single KVM guest, without hardware assist) on Intel Nehalem platforms. This provides e.g., unmodified guest operating systems, such as VMware ESX or VMware vSphere, to use the full SPC-3/SPC-4 SCSI functionality on any type of local raw block storage object they require.
+
+</p>
+<p>The tcm_loop fabric module (loopback.ko, Linux kernel driver database) for LIO was released with Linux kernel 2.6.39 on May 18, 2011.[1]
+
+</p>
+<h2>targetcli</h2>
+<p>targetcli is used to configure tcm_loop targets. targetcli aggregates LIO service modules via a core library, and exports them through an API, to provide a unified single-node SAN configuration shell, independently of the underlying fabric(s).
+
+</p>
+
+
+<h3>Startup</h3>
+<p>targetcli is invoked by running targetcli as root from the command prompt of the underlying LIO shell. An initial setup as described in targetcli is assumed.
+
+</p>
+<pre><code class="language-bash"># targetcli
+Welcome to targetcli:
+
+ Copyright (c) 2014 by Datera, Inc.
+ All rights reserved.
+
+Visit us at http://www.datera.io.
+
+Using ib_srpt fabric module.
+Using qla2xxx fabric module.
+Using iscsi fabric module.
+Using loopback fabric module.
+
+/> loopback/ info
+Fabric module name: loopback
+ConfigFS path: /sys/kernel/config/target/loopback
+Allowed WWN list type: naa
+Fabric module specfile: /var/target/fabric/loopback.spec
+Fabric module features: nexus
+Corresponding kernel module: tcm_loop
+/></code></pre>
+<h3>Cheat sheet</h3>
+<table>
+  <tr>
+    <th>Command</th>
+    <th>Commemnt</th>
+  </tr>
+  <tr>
+    <td>/backstores/iblock create my_disk /dev/sdb	</td>
+    <td>Create the LUN my_disk on the device /dev/sdb</td>
+  </tr>
+  <tr>
+    <td>In /backstores/iblock/my_disk>:
+/loopback create</td>
+    <td>Create a local loopback target</td>
+  </tr>
+  <tr>
+    <td>/saveconfig	</td>
+<td>Commit the configuration
+
+</td>
+  </tr>
+</table>
+
+<h3>Display the object tree</h3>
+<p>Use ls to list the object hierarchy, which is initially empty:
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [0 Storage Object]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>Global parameter auto_cd_after_create</strong><br>
+    After the creation of a new object, automatically enter its object context.
+  </div>
+</div>
+<p>Per default, auto_cd_after_create is set to true, which automatically enters an object context (or working directory) after its creation. The examples here are modeled after this behavior.
+
+</p>
+<p>Optionally, set auto_cd_after_create=false to prevent targetcli from automatically entering new object contexts after their creation:
+
+</p>
+<pre><code class="language-bash">/> set global auto_cd_after_create=false
+Parameter auto_cd_after_create is now 'false'.
+/></code></pre>
+
+<h3>Create a backstore</h3>
+<p>Create a backstore using the IBLOCK or FILEIO type devices.
+
+</p>
+<p>For instance, enter the top-level backstore context and create an IBLOCK backstore from a /dev/sdb block device:
+
+</p>
+<pre><code class="language-bash">/> cd backstores/
+/backstores> iblock/ create name=my_disk dev=/dev/sdb
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/sdb.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk></code></pre>
+
+<p>targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+<p>The resulting object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/>
+</code></pre>
+
+</p>
+<p>For instance, create an IBLOCK backstore on a logical volume (under /dev/<volume_group_name>/<logical_volume_name>):
+
+</p>
+<pre><code class="language-bash">/backstores> iblock/ create name=my_disk dev=/dev/vg0/lv1
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/vg0/lv1.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk>
+</code></pre>
+<p>Again, targetcli automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+
+</p>
+<div class="info-box">
+  <span class="info-icon"></span>
+  <div class="info-text">
+    <strong>More backstore examples</strong><br>
+    More examples on creating backstores can be found in targetcli.
+  </div>
+</div>
+<h3>Instantiate a target
+</h3>
+<p>Instantiate a loopback target on the existing IBLOCK backstore device my_disk (as set up in targetcli):
+
+</p>
+<pre><code class="language-bash">/backstores/iblock/my_disk> /loopback create
+Successfully created LUN 0.
+Entering new node /loopback/naa.60014057f822d991/luns/lun0.
+/loopback/naa...991/luns/lun0> </code></pre>
+<p>targetcli automatically assigns the default ID '0' to the LUN, and then changes the working context to the new LUN. Now the target is created, and exports /dev/sdb as LUN 0.
+
+</p>
+<p>Return to the root context, as no attributes need to be set or modified for a standard loopback target:
+
+</p>
+<pre><code class="language-bash">/loopback/naa...991/luns/lun0> cd /
+/></code></pre>
+<h3>Display the object tree
+</h3>
+<p>The resulting object hierarchy looks as follows (displayed from the root object):
+
+</p>
+<pre><code class="language-bash">/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [1 Target]
+  | o- naa.60014057f822d991 ............................. [naa.60014053485b9490]
+  | | o- luns .......................................................... [1 LUN]
+  | |   o- lun0 .................................... [iblock/my_disk (/dev/sbd)]
+  o- qla2xxx ........................................................ [0 Target]
+/></code></pre>
+configfs_group = loopback</code></pre>
+<h2>Specifications</h2>
+<p>The type of SCSI fabric features that are available with tcm_loop (target mode emulated SAS ports) includes the complete set of SPC-3/SPC-4 logic in the LIO engine, including advanced features such as PRs, ALUA, VAAI, etc.
+
+</p>
+<p>tcm_loop supports high level fabric emulation. That is, depending on which WWN is used to create the ConfigFS group in /sys/kernel/config/target/loopback/$WWN, it configures itself to return iSCSI, FC etc. device identifiers for the SCSI LUN protocol identifiers device identifier page.
+
+</p>
+</section>
+
+  </main>
+
+  
+
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+
+  <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="www.linkedin.com/in/max-christie-005022255" target = "_blank">
+        Max Christie
+        </a>
+      .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>
+

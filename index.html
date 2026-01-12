@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>LinuxIO (LIO) — Linux SCSI Target IO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+   <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <!-- Site Header -->
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+
+
+  <!-- Hero -->
+  <section class="hero" id="top">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <h1>LinuxIO (LIO)</h1>
+        <p class="tagline">
+          The standard open-source SCSI target in Linux — powering modern storage across Fibre Channel,
+          iSCSI, InfiniBand, USB, and more.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <main class="container content">
+    
+    <!-- Jump links -->
+    
+
+    <aside class="jump-links" aria-label="On this page">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li>
+          <a href="#frontend">Frontend (Fabric Modules)</a>
+        </li>
+        <li><a href="#backend">Backend (Backstores)</a></li>
+        <li><a href="#features">Advanced SCSI features</a></li>
+        <li><a href="#targetcli">targetcli</a></li>
+        <li><a href="#compatibility">Compatibility & certifications</a></li>
+        <li><a href="#ha">High availability & clustering</a></li>
+      </ul>
+    </aside>
+
+    <article class="prose">
+      <section id="overview" class="section">
+        <h2>Overview</h2>
+        <p>
+          LinuxIO (LIO) is the standard open-source SCSI target in Linux. It supports all
+          prevalent storage fabrics, including Fibre Channel (QLogic, Emulex), FCoE, iEEE 1394,
+          iSCSI (incl. Chelsio offload support), iSER (Mellanox InfiniBand), SRP
+          (Mellanox InfiniBand), USB, vHost, and more.
+        </p>
+        <p>
+          The advanced feature set of LinuxIO has made it the SCSI target of choice for many
+          storage array vendors, for instance allowing them to achieve VMware Ready certifications.
+          Native support for LIO in QEMU/KVM, libvirt, and OpenStack makes it an attractive storage
+          option for cloud deployments.
+        </p>
+      </section>
+      
+      <section id="architecture" class="section">
+        <h2>Architecture</h2>
+        <p>The LinuxIO engine implements the generic SCSI semantics.</p>
+         <img src="images/330px-LIO-Architecture.png" alt="LinuxIO Target Architecture diagram">
+        <ul class="checklist">
+          <li>High-performance, non-blocking, multithreaded architecture with SSE4.2 support</li>
+          <li>CPU architectures: x86, ia64, Alpha, Cell, PPC, ARM, MIPS, etc.</li>
+          <li>Distributions: CentOS, Debian, Fedora, openSUSE, RHEL, Scientific Linux, SLES, Ubuntu</li>
+          <li>Platforms: PC architecture, Sony PS2/PS3, Raspberry Pi, Technologic TS-7800</li>
+        </ul>
+      </section>
+
+
+      <section id="frontend" class="section">
+        <h2>Frontend — Fabric Modules</h2>
+        <p>
+          Fabric Modules implement the protocols to transmit data over diverse fabrics, providing
+          transport media independence.
+        </p>
+
+        <div class="card-grid">
+          <div class="card"><h3><a href="basic-fibre.html">Fibre Channel</a></h3><p>QLogic, Emulex</p></div>
+          <div class="card"><h3><a href="basic-fcoe.html">FCoE</a></h3></div>
+          <div class="card"><h3>iEEE 1394</h3></div>
+          <div class="card"><h3><a href="basic-ibm-vscsi.html">IBM vSCSI (System P)</a></h3></div>
+          <div class="card"><h3><a href="basic-iscsi.html">iSCSI</a></h3><p>Software, Chelsio </p></div>
+          <div class="card"><h3><a href="basic-iser.html">iSER (InfiniBand)</a></h3></div>
+          <div class="card"><h3><a href="basic-loopback.html">Loopback</a></h3><p>SCSI virtualization </p></div>
+          <div class="card"><h3><a href="basic-srp.html">SRP (InfiniBand)</a></h3></h3></div>
+          <div class="card"><h3>USB Gadget</h3></div>
+          <div class="card"><h3><a href="basic-vhost.html">vHost</a></h3><p>virtio / virtio-scsi PV guests </p></div>
+        </div>
+
+        <div id="frontend-matrix" class="info-box" role="note">
+          <div class="info-icon"></div>
+          <div class="info-text">
+            Tip: You can mix protocols to match your fabric strategy. For host examples, see <code>targetcli</code>.
+          </div>
+        </div>
+      </section>
+
+      <section id="backend" class="section">
+        <h2>Backend — Backstores</h2>
+        <p>
+          Backstores implement the methods to access data on devices, providing storage media independence.
+        </p>
+        <ul class="checklist">
+          <li>Backstores: SATA, SAS, SCSI, SSD, FLASH, DVD, USB, NVMe, ramdisk, SCSI passthrough, userspace SCSI devices via TCMU, userspace block devices via ublk, etc.</li>
+          <li>Virtualization of storage media; transparent mapping of I/O to LUNs</li>
+        </ul>
+      </section>
+
+      <section id="features" class="section">
+        <h2>Advanced SCSI feature set</h2>
+        <div class="pill-list">
+          <span class="pill">Persistent Reservations (PRs)</span>
+          <span class="pill">Asymmetric Logical Unit Assignment (ALUA)</span>
+          <span class="pill">Error Recovery Levels (ERL=0,1,2)</span>
+          <span class="pill">Active/active task migration & session continuation (ERL=2)</span>
+          <span class="pill">Protocol multiplexing, load-balancing & failover (MC/S)</span>
+          <span class="pill">T10 Data Integrity Format (DIF)</span>
+          <span class="pill">vStorage APIs for Array Integration (VAAI)</span>
+        </div>
+      </section>
+
+      <section id="targetcli" class="section">
+        <h2>targetcli</h2>
+        <p>
+          <code>targetcli</code> provides the fabric-agnostic single-node management shell for LIO.
+          It aggregates and exports all LIO SAN functionality via the RTSlib library and API.
+        </p>
+<pre><code class="language-shell">$ targetcli
+/> ls
+o- / ................................................................... 
+  o- backstores ........................................................ 
+  o- targets ........................................................... 
+</code></pre>
+      </section>
+
+      <section id="compatibility" class="section">
+        <h2>Compatibility & certifications</h2>
+        <div class="two-col">
+          <div>
+            <ul>
+              <li><strong>Microsoft:</strong> Windows® Server 2008/R2/2012 and Windows® XP/Vista/7/8</li>
+              <li><strong>Apple:</strong> macOS (via third-party initiator)</li>
+              <li><strong>Linux:</strong> CentOS, Debian, Fedora, openSUSE, RHEL, Scientific Linux, SLES, Ubuntu</li>
+              <li><strong>Unix:</strong> Solaris 10, OpenSolaris, HP-UX</li>
+              <li><strong>VMs:</strong> vSphere 5, Red Hat KVM, Microsoft Hyper-V, Oracle xVM/VirtualBox, Xen</li>
+            </ul>
+          </div>
+          <div class="notice-box" role="status">
+            <div class="notice-icon"></div>
+            <div class="notice-text">
+              LIO enables VMware Ready certifications and passes Microsoft Windows® Failover Cluster compatibility tests.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ha" class="section">
+        <h2>High availability & clustering</h2>
+        <p>
+          LIO is designed from the ground up to support highly available and clustered storage:
+        </p>
+        <ul class="checklist">
+          <li>Deeply embedded high availability (Network RAID1)</li>
+          <li>Scale-out clusters and disaster recovery solutions</li>
+        </ul>
+      </section>
+    </article>
+  </main>
+
+  
+
+
+
+
+ 
+  <footer>
+    <p>Based on the original work at
+       <a href="http://linux-iscsi.org" target="_blank" rel="noopener">linux-iscsi.org</a>, and updated by
+      <a href="https://www.linkedin.com/in/max-christie-005022255" target="_blank" rel="noopener">
+      Max Christie
+    </a> .Thanks to Nicholas Bellinger for creating LIO.
+      </a>
+    </p>
+  </footer>
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+</body>
+</html>

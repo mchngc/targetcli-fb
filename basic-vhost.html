@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linux-IO Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+   <!-- Highlight.js core + Python only -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Shared site JavaScript -->
+<script src="js/main.js"></script>
+
+</head>
+<body>
+  <header>
+  <!-- Left: Hamburger -->
+  <button id="hamburger-toggle" class="hamburger-toggle" aria-label="Open menu">☰</button>
+
+  <!-- Center: Logo -->
+  <div class="logo">
+    <a href="index.html">Linux SCSI Target IO</a>
+  </div>
+
+  <!-- Right: Nav + Dark/Light toggle -->
+  <div class="header-right">
+    <nav id="header-nav">
+      <ul>
+         
+        <li class="dropdown-parent">
+          <a href="#" id="code-toggle">Code ▾</a>
+          <ul class="dropdown">
+            <li><a href="https://github.com/open-iscsi/targetcli-fb/">targetcli</a></li>
+            <li><a href="https://github.com/open-iscsi/rtslib-fb/">rtslib</a></li>
+            <li><a href="https://github.com/open-iscsi/tcmu-runner">tcmu-runner</a></li>
+          </ul>
+        </li>
+        <li><a href="docs.html">Documentation</a></li>
+      </ul>
+    </nav>
+
+    <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+      <i data-lucide="moon"></i>
+    </button>
+  </div>
+</header>
+
+
+  <main class = "container content">
+    <aside class="sidebar">
+      <h2>Docs Menu</h2>
+      <ul>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="basic-dropdown">Basic Setup</a>
+          <ul class="sidebar-dropdown" id="basic-dropdown">
+            <li><a href="basic-iscsi.html">iSCSI</a></li>
+            <li><a href="basic-vhost.html">vhost-scsi</a></li>
+            <li><a href="basic-fcoe.html">FCoE</a></li>
+            <li><a href="basic-fibre.html">Fibre Channel</a></li>
+            <li><a href="basic-ibm-vscsi.html">IBM vSCSi (System P)</a></li>
+            <li><a href="basic-iser.html">ISER (InfiniBand)</a></li>
+            <li><a href="basic-loopback.html">Loopback</a></li>
+            <li><a href="basic-srp.html">SRP (Infiniband)</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#" class="dropdown-toggle" data-target="tuning-dropdown">Tuning</a>
+          <ul class="sidebar-dropdown" id="tuning-dropdown">
+            <li><a href="tuning-vhost.html">vhost-scsi</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+<section class="content">
+     <h1>vhost-scsi Setup</h1>
+<p>This document describes how to set up a vhost-scsi device using <code class="language-bash">virsh/libvirt</code> or by manually running QEMU.</p>
+
+
+<h2>Host Setup</h2>
+<p>vhost-scsi combined with QEMU presents the guest a virtual SCSI controller with N LUNs that can be backed by physical NVMe drives, SAS/SATA disks, RAM disks, or any block device Linux supports.To emulate SCSI commands and interact with the backstore device, it uses the Linux kernel LIO/target layer. That target device is then passed to QEMU's vhost-scsi layer which handles communication between the guest and host. This section describes how to setup the target with targetcli, then edit a libvirt xml file so when tools like virsh start the VM they have QEMU bind the kernel's target device to the VM.</p>
+
+<h3>LIO vhost-scsi Device Initialization with targetcli</h3>
+<p>If you have already setup devices with targetcli and rebooted the system, then to re-initialize them in the kernel run:</p>
+<pre><code class="language-bash"># targetcli restoreconfig
+  Configuration restored from /etc/target/saveconfig.json
+# targetcli ls
+</code></pre>
+<p>If you want to create new device or add more devices run targetcli to enter the shell.</p>
+
+<h3>LIO vhost-scsi Device Creation with targetcli</h3>
+<pre><code class="language-bash"># yum install targetcli   # On Oracle Linux
+# apt-get install targetcli  # On Ubuntu
+
+# targetcli
+targetcli shell version 2.1.53
+For help on commands, type 'help'.
+/>
+</code></pre>
+
+<p>Create a disk that we gave the name "vol0" and is backed by the physical device /dev/nvme0n1.</p>
+<pre><code class="language-bash">/> ls
+o- / ................................................................................................ [...]
+  o- backstores ..................................................................................... [...]
+  | o- block ......................................................................... [Storage Objects: 0]
+  | o- fileio ........................................................................ [Storage Objects: 0]
+  | o- pscsi ......................................................................... [Storage Objects: 0]
+  | o- ramdisk ....................................................................... [Storage Objects: 0]
+  o- iscsi ................................................................................... [Targets: 0]
+  o- loopback ................................................................................ [Targets: 0]
+  o- srpt .................................................................................... [Targets: 0]
+  o- vhost ................................................................................... [Targets: 0]
+/> cd /backstores/block
+/backstores/block> create dev=/dev/nvme0n1 name=vol0
+Created block storage object vol0 using /dev/nvme0n1.
+/backstores/block> ls
+o- block ............................................................................. [Storage Objects: 1]
+  o- vol0 ................................................ [/dev/nvme0n1 (256.0GiB) write-thru deactivated]
+    o- alua .............................................................................. [ALUA Groups: 1]
+      o- default_tg_pt_gp .................................................. [ALUA state: Active/optimized]
+</code></pre>
+<p>This is cd'd to the device's configuration directory and set the emulate_pr setting to 0. This disables persistent reservation (PR) emulation in the target layer. Instead emulating PR commands in software and storing the state in memory or a local file on the system, the target will pass PR commands directly to the backing device if it supports it. If the device does not support PRs then they will be failed immediately so the application is aware of the lack of support. This avoids a possible performance issue that limits IOPS and throughput and prevents possible corruption if the application is using PRs and the VM is migrated to a different system.</p>
+<pre><code class="language-bash">/backstores/block> cd vol0
+/backstores/block/vol0 set attribute emulate_pr=0
+Parameter emulate_pr is now '0'.
+/backstores/block/vol0> info
+dev: /dev/nvme0n1
+name: vol0
+plugin: block
+readonly: False
+write_back: False
+wwn: 5122f2cd-07dc-4eec-a2d4-c122db6a2a81</code></pre>
+<p>Above, we also ran the "info" command. Note that on the guest udev will use the wwn name from the info command and the device name, vol0, to create persistent names in the /dev/disk directories.
+</p>
+<p>Next, we will create the vhost-scsi target and then map vol0 to a LUN on it.</p>
+<pre><code class="language-bash">/backstores/block/vol0> cd /vhost
+/vhost> create naa.1111111111111111
+Created target naa.1111111111111111.
+Created TPG 1.
+/vhost> ls
+o- vhost ..................................................................................... [Targets: 1]
+  o- naa.1111111111111111 ....................................................................... [TPGs: 1]
+    o- tpg1 ........................................................... [naa.50014052bee3f148, no-gen-acls]
+      o- acls ................................................................................... [ACLs: 0]
+      o- luns ................................................................................... [LUNs: 0]
+/vhost> cd naa.1111111111111111/tpg1/luns
+/vhost/naa.11...111/tpg1/luns> create /backstores/block/vol0
+Created LUN 0.</code></pre>
+<p>Above, we cd'd to the vhost-scsi directory, then used the "create" command to create a vhost-scsi device we gave the name "naa.1111111111111111". We then cd'd to the luns directory and mapped vol0 to LUN 0. If you don't pass in a LUN value to the create command the next available one is assigned.</p>
+<p>You can now, create more disks and map them to LUNs on the same vhost-scsi device or create more disks and vhost-scsi devices.</p>
+<p>When you are done creating disks/targets, you can run "exit". The configuration will be saved in /etc/target/saveconfig.json. When the system is rebooted you can run "targetcli restoreconfig" to load the disks and targets back into the kernel.</p>
+<pre><code class="language-bash">/vhost/naa.11...111/tpg1/luns> exit
+Global pref auto_save_on_exit=true
+Last 10 configs saved in /etc/target/backup/.
+Configuration saved to /etc/target/saveconfig.json</code></pre>
+<h2>Prepare and Start the Guest</h2>
+<p>Now that the vhost-scsi target is setup, we must setup the guest to use it. This section will describe how to do it with virsh/libvirt or by passing it to QEMU on the command line.
+</p>
+<h3>Using virsh</h3>
+<p>This section assumes you have installed libvirt and virsh and have a guest created already. List using existing VMs:</p>
+<pre><code class="language-bash"># virsh list --all
+ Id   Name                              State
+--------------------------------------------------
+-    nshqat05adm02vm01.us.oracle.com
+-    nshqat05adm02vm02.us.oracle.com
+-    nshqat05adm02vm03.us.oracle.com
+shut off
+shut off
+shut off
+</code></pre>
+<p>Run virsh to edit one of the VMs listed:</p>
+<pre><code class="language-bash"># virsh edit nshqat35adm02vm03.us.oracle.com</code></pre>
+<h3>Add Device To Guest Definition</h3>
+<p>In the devices section we added a scsi_host hostdev using the name we gave our vhost-scsi target naa.1111111111111111.</p>
+
+<pre><code class="language-bash">&lt;domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'&gt;
+...
+        &lt;devices&gt;
+        ...
+                &lt;hostdev mode='subsystem' type='scsi_host' managed='no'&gt;
+                        &lt;source protocol='vhost' wwpn='naa.1111111111111111'/&gt;
+            &lt;/hostdev&gt;
+        ...
+        &lt;/devices&gt;
+&lt;/domain&gt;
+</code></pre>
+<h2>Start Guest</h2>
+<pre><code class="language-bash"># virsh start nshqat35adm02vm03.us.oracle.com</code></pre>
+<h3>Prepare and Start the Guest Manually</h3>
+<p>This section assumes you have installed QEMU.</p>
+<h4>QEMU -device Definition</h4>
+<p>To add the vhost-scsi device, wwpn=naa.1111111111111111, we made with targetcli use the following device definition with your QEMU call:</p>
+<pre><code class="language-bash">-device vhost-scsi-pci,wwpn=naa.1111111111111111</code></pre>
+<h3>Using QEMU</h3>
+<p>
+This command will create a VM with 16 vCPUs and will have 16GB of memory. It uses an Oracle Linux 9 image which we have installed the UEK-next kernel on to.</p>
+
+<pre><code class="language-bash">$ qemu-system-x86_64 -smp 16 -m 16G -enable-kvm -cpu host \
+-hda /work/OL9U4_x86_64.qcow2 -name debug-threads=on \
+-serial mon:stdio -vnc :7 \
+-device vhost-scsi-pci,wwpn=naa.1111111111111111
+</code></pre>
+<p>Note:Open the VNC client application and establish a connection to localhost:5907. A VM may be accessed with any VNC client program. For instance, you may utilize RealVNC or TightVNC if you’re using Windows. Use the vncviewer software that comes with your Linux distribution if you’re running Linux. Moreover, you may launch a VNC server using display number X. Replace the display number with X, so that, for example, 0 will listen on 5900, 1 on 5901, and so on.
+ </p>
+
+<h2>Check Your Guest</h2>
+<p>To see how the target and LUN targetcli created got mapped to the guest OS’s names/IDs run lsscsi in the VM:</p>
+<pre><code class="language-bash">$ lsscsi
+[0:0:1:0]    disk    LIO-ORG  vol0  4.0   /dev/sda
+</code></pre>
+<p>When we created the block device with targetcli we gave it the name “vol0", and we see it above attached to [0:0:1:0]. This is [SCSI host 0: bus 0: target 1: LUN 0] and the OS’s name for the device is sda.</p>
+<p>Instead of sda, we can prevent ourself from overwriting our root disk or wasting a lot of time performing tests on the wrong disk by using the udev name. From the targetcli info command we saw that the wwn for the disk was 5122f2cd-07dc-4eec-a2d4-c122db6a2a81, so in the /dev/disk/by-id dir you will find:
+</p>
+<pre><code class="language-bash">$ ls -l /dev/disk/by-id/scsi-1LIO-ORG_vol0:5122f2cd-07dc-4eec-a2d4-c122db6a2a81
+</code></pre>
+<p>and you use the "/dev/disk/by-id/scsi-1LIO-ORG_vol0:5122f2cd-07dc-4eec-a2d4-c122db6a2a81" name across reboots (warning that some apps don't like the ":" so you may need to do "\:").</p>
+<h2>Test It Out</h2>
+<pre><code class="language-bash">$$ cat randread.4jobs.fio
+[global]
+bs=4K
+iodepth=128
+direct=1
+ioengine=libaio
+group_reporting
+time_based
+runtime=120
+name=standard-iops
+rw=randread
+numjobs=4
+cpus_allowed=0-3
+[job1]
+# note: some applications don't like the colon in the name so you have to add the backslash
+filename=/dev/disk/by-id/scsi-1LIO-ORG_vol0\:5122f2cd-07dc-4eec-a2d4-c122db6a2a81
+$ fio randread.4jobs.fio
+</code></pre>
+
+
+
+</section>
+
+  </main>
+
+  
+
+ <button id="back-to-top" aria-label="Back to top">↑</button>
+</body>
+</html>
